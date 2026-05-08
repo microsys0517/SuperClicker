@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="执行设置" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:hint="循环次数 (0=无限)">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_loop_count" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="0" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:hint="循环间隔(ms)">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_loop_interval" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="1000" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:hint="开始步骤序号 (从0开始)">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_start_step" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="0" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switch_hide_exec" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="隐藏执行" android:layout_marginBottom="8dp" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switch_screen_off" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="熄屏执行" android:layout_marginBottom="8dp" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switch_notify_start" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="开始提醒" android:checked="true" android:layout_marginBottom="8dp" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switch_notify_complete" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="完成提醒" android:checked="true" android:layout_marginBottom="16dp" />
+
+        <Button android:id="@+id/btn_save_settings" android:layout_width="match_parent" android:layout_height="52dp" android:text="保存设置" android:backgroundTint="@color/primary" android:textColor="@color/white" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider" android:layout_marginVertical="16dp" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="规则管理" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_marginBottom="12dp" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Button android:id="@+id/btn_export" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:text="导出脚本" android:textColor="@color/primary" />
+            <Button android:id="@+id/btn_import" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="导入脚本" android:textColor="@color/primary" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

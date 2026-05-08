@@ -1,0 +1,3 @@
+-keepattributes *Annotation*
+-keep class com.superclicker.model.** { *; }
+-keep class com.superclicker.db.** { *; }

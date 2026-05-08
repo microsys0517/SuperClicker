@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@color/surface"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:elevation="2dp">
+        <ImageButton android:id="@+id/btn_back" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_menu_revert" android:contentDescription="返回" />
+        <TextView android:id="@+id/tv_script_name" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="脚本编辑" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+        <ImageButton android:id="@+id/btn_record" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_record" android:contentDescription="录制" />
+        <ImageButton android:id="@+id/btn_add_step" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_add" android:backgroundTint="@color/primary" android:contentDescription="添加步骤" />
+        <ImageButton android:id="@+id/btn_delete_step" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_delete" android:contentDescription="删除" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_steps"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/bg_main"
+        android:padding="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@color/surface"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:elevation="4dp">
+        <Button android:id="@+id/btn_play" android:layout_width="wrap_content" android:layout_height="40dp" android:text="执行" android:textColor="@color/white" android:backgroundTint="@color/green" android:textSize="14sp" />
+        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+        <TextView android:id="@+id/tv_step_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 步" android:textColor="@color/text_hint" android:textSize="13sp" android:layout_marginEnd="12dp" />
+        <Button android:id="@+id/btn_config" android:layout_width="wrap_content" android:layout_height="40dp" android:text="设置" android:textColor="@color/white" android:backgroundTint="@color/primary" android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

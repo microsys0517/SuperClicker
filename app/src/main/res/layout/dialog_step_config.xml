@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView android:id="@+id/tv_config_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="步骤配置" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/text_primary" android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:hint="步骤标签">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_label" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout android:id="@+id/layout_coords" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="X1">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_x1" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Y1">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_y1" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/layout_coords2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:visibility="gone">
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="X2">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_x2" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Y2">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_y2" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/layout_duration" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="时长(ms)" android:visibility="gone">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_duration" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/layout_image" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="图片路径" android:visibility="gone">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_image_path" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/layout_text_match" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="目标文字" android:visibility="gone">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_match_text" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/layout_input" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="输入内容" android:visibility="gone">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_input_text" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout android:id="@+id/layout_jump" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="跳转到步骤序号" android:visibility="gone">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_jump_target" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="等待时间" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="执行前(ms)">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_wait_before" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="执行后(ms)">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_wait_after" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="500" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:hint="重试次数">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_retry_count" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="重试间隔(ms)">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/et_retry_delay" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="1000" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:gravity="end">
+            <Button android:id="@+id/btn_cancel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="取消" android:textColor="@color/text_secondary" />
+            <Button android:id="@+id/btn_save" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="保存" android:backgroundTint="@color/primary" android:textColor="@color/white" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

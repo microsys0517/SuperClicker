@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_floating"
+    android:padding="8dp">
+
+    <LinearLayout android:id="@+id/layout_info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+        <TextView android:id="@+id/tv_floating_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="就绪" android:textColor="@color/green" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tv_floating_step" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#CCCCCC" android:textSize="11sp" />
+        <TextView android:id="@+id/tv_floating_loop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#CCCCCC" android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/layout_controls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/btn_floating_play" android:layout_width="36dp" android:layout_height="36dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_play" android:scaleType="centerInside" android:contentDescription="开始" />
+        <ImageButton android:id="@+id/btn_floating_pause" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginStart="4dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@android:drawable/ic_media_pause" android:scaleType="centerInside" android:visibility="gone" android:contentDescription="暂停" />
+        <ImageButton android:id="@+id/btn_floating_stop" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginStart="4dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_stop" android:scaleType="centerInside" android:contentDescription="停止" />
+        <View android:layout_width="1dp" android:layout_height="24dp" android:background="#44FFFFFF" android:layout_marginHorizontal="6dp" />
+        <ImageButton android:id="@+id/btn_floating_hide" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_hide" android:scaleType="centerInside" android:contentDescription="隐藏" />
+        <ImageButton android:id="@+id/btn_floating_close" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginStart="4dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_close" android:scaleType="centerInside" android:contentDescription="关闭" />
+    </LinearLayout>
+</LinearLayout>

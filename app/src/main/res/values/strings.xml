@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">超级点击器</string>
+    <string name="accessibility_desc">超级点击器需要无障碍权限来执行自动点击、滑动等操作</string>
+    <string name="nav_scripts">脚本</string>
+    <string name="nav_editor">编辑</string>
+    <string name="nav_log">日志</string>
+    <string name="nav_settings">设置</string>
+</resources>
