@@ -1,5 +1,4 @@
 package com.superclicker.model;
-
 public class ExecutionConfig {
     public int loopCount = 0;
     public long loopInterval = 1000;

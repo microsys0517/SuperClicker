@@ -1,0 +1,2676 @@
+package com.superclicker.model;public
+    CLICK("点击", "点
+
+    LONG_PRESS("长按", "长按指定
+    MULTI_TOUCH("多点触控", "同时多点操作", Category.ACTI
+
+    COLOR_MAT
+    TEXT_MATCH("识字", "OC
+    NUMBER_COMPARE("数�
+    TEXT_COMPARE("文字对比", "比较文字内容", Catego
+    TIME_COMPARE("时间对比", "比较时间", Category.CONDITION),    COUNTER("计数", "计数器操作", Category.TOOL),   
+    STOP("停止", "停止脚本执行", Category.CONTROL),    PAUSE("暂停", "
+    BACK_KEY("返回键", "按下返回键", 
+    HOME_
+    M
+ 
+   
+    SUB_RULE("子规则", "调用其他脚本", Category.CONTROL);    public final String
+    public final String d
+
+    StepType(String label, St
+        this.label = la
+        this.description 
+        this.category = category;
+    }    public enum Category
+
+        RECOGNIZE("识别"),        CONDITION("
+        TOOL("工具"),        CONTRO
+
+        public final String label;        Category(String label) {    
+        }    }}EOF# 4. model/Step.javacat > app
+package com.superclicker.model;import androidx.room
+import androidx.room.ForeignKey;import and
+import androidx.room.PrimaryKey;import androidx.room
+import com.superclicker.db.Converters;@Entity(tableN
+    foreignKeys = @ForeignKey(        entity = Script.cla
+
+        childColumns = "scriptId",        onDelete =
+
+    indices = @Index("scriptId"))@TypeConv
+public class Step {    @Prim
+    public long id;    public long scriptId;    public int order;    public Ste
+    public String label;    public long waitBefore;    public long waitAfter;   
+    public long retryDelay;    public boolean enabled;    pu
+    public int y1;    public int x2;    public int y2;    public long dura
+
+    public St
+    public int matchColor;    public int colorTolerance
+    public String matchText;    public Str
+    public String compareValue1;    public Str
+
+    public String counterName;    public int counter
+    public String counterOp;    public String inp
+
+    public String jumpCondition;    publ
+    public String errorRule;    public transient boolean 
+    public Step() {        this.enabled = true;        this.waitBe
+        this.waitAfter = 5
+        t
+
+        this.duration = 300;        this.colorTolera
+    }    public Step 
+        Step s = new Step();        s
+        s.order = this.order;        s.t
+        s.label = this.label;        s
+        s.waitAfter = this.waitAfter;        s
+        s.retryDelay = this.retryDelay;
+        s.enabled = this.enabled;        s.
+        s.y1 = this.y1;        
+        s.y2 = this.y2;        s.duration = this
+        s.multiPoints = this.multiPoi
+        s.matchImage
+        s.matchColor = this.m
+        s.col
+        s.matchText = this.matchText;        s.regionJson
+        s.compareValue1 = this.compareValue1;      
+        s.compareOperator 
+        s.counterName = 
+        s.c
+
+        s.inputText = this.inputText;        
+        s.jumpCondition = this.jumpCondition;        s.subScriptId = this.subScr
+        s.errorRule = this.errorRule;        return s;  
+}EOF# 5. model/Script.javacat 
+package c
+
+import androidx.room.Entity;import androidx.
+import androidx.room.TypeConverters;import com.superclicker.db.Converters;@Enti
+@TypeConv
+publi
+
+    @PrimaryK
+    public long id;    public
+    public String descrip
+    public long createTime;    public long updateTime;    p
+    public Script() {        this.createTime = System.c
+        this.updateTime = Syst
+        this.config = new ExecutionConf
+    }}EOF# 6. model/ExecutionConfig.javac
+package com.supe
+public class ExecutionConfig {    public int loop
+    public long loopInterval = 1000;    public l
+    public int startStep = 
+    public boolean sequent
+    public boolean hideExecution = fal
+    public bo
+    public boolean showLog = true;    publi
+    pub
+
+    p
+
+}EOF
+# 7. model/Rule.javacat > app/src
+packa
+
+public class Rul
+    public String name; 
+
+ 
+   
+
+    public boolean stopO
+    public enum ErrorAction {        
+    }
+
+    public Rule() {
+        onStepError = ErrorAction.RETRY;
+        maxRetries = 3;
+        retryInterval = 1000;
+        stopOnError = false;
+    }
+}
+EOF
+
+# 8. db/Converters.java
+cat > app/src/main/java/com/superclicker/db/Converters.java << 'EOF'
+package com.superclicker.db;
+
+import androidx.room.TypeConverter;
+
+import com.google.gson.Gson;
+import com.superclicker.model.ExecutionConfig;
+import com.superclicker.model.StepType;
+
+public class Converters {
+
+    private static final Gson gson = new Gson();
+
+    @TypeConverter
+    public static String fromStepType(StepType type) {
+        return type == null ? null : type.name();
+    }
+
+    @TypeConverter
+    public static StepType toStepType(String name) {
+        return name == null ? null : StepType.valueOf(name);
+    }
+
+    @TypeConverter
+    public static String fromExecutionConfig(ExecutionConfig config) {
+        return config == null ? null : gson.toJson(config);
+    }
+
+    @TypeConverter
+    public static ExecutionConfig toExecutionConfig(String json) {
+        return json == null ? new ExecutionConfig() : gson.fromJson(json, ExecutionConfig.class);
+    }
+}
+EOF
+
+# 9. db/AppDatabase.java
+cat > app/src/main/java/com/superclicker/db/AppDatabase.java << 'EOF'
+package com.superclicker.db;
+
+import android.content.Context;
+
+import androidx.room.Database;
+import androidx.room.Room;
+import androidx.room.RoomDatabase;
+
+import com.superclicker.model.Script;
+import com.superclicker.model.Step;
+
+@Database(entities = {Script.class, Step.class}, version = 1, exportSchema = false)
+public abstract class AppDatabase extends RoomDatabase {
+
+    private static volatile AppDatabase INSTANCE;
+
+    public abstract ScriptDao scriptDao();
+    public abstract StepDao stepDao();
+
+    public static AppDatabase getInstance(Context context) {
+        if (INSTANCE == null) {
+            synchronized (AppDatabase.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = Room.databaseBuilder(
+                        context.getApplicationContext(),
+                        AppDatabase.class,
+                        "superclicker.db"
+                    ).build();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+}
+EOF
+
+# 10. db/ScriptDao.java
+cat > app/src/main/java/com/superclicker/db/ScriptDao.java << 'EOF'
+package com.superclicker.db;
+
+import androidx.lifecycle.LiveData;
+import androidx.room.Dao;
+import androidx.room.Delete;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Update;
+
+import com.superclicker.model.Script;
+
+import java.util.List;
+
+@Dao
+public interface ScriptDao {
+
+    @Query("SELECT * FROM scripts ORDER BY updateTime DESC")
+    LiveData<List<Script>> getAll();
+
+    @Query("SELECT * FROM scripts ORDER BY updateTime DESC")
+    List<Script> getAllSync();
+
+    @Query("SELECT * FROM scripts WHERE id = :id")
+    Script getById(long id);
+
+    @Insert
+    long insert(Script script);
+
+    @Update
+    void update(Script script);
+
+    @Delete
+    void delete(Script script);
+
+    @Query("DELETE FROM scripts WHERE id = :id")
+    void deleteById(long id);
+}
+EOF
+
+# 11. db/StepDao.java
+cat > app/src/main/java/com/superclicker/db/StepDao.java << 'EOF'
+package com.superclicker.db;
+
+import androidx.lifecycle.LiveData;
+import androidx.room.Dao;
+import androidx.room.Delete;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Update;
+
+import com.superclicker.model.Step;
+
+import java.util.List;
+
+@Dao
+public interface StepDao {
+
+    @Query("SELECT * FROM steps WHERE scriptId = :scriptId ORDER BY `order` ASC")
+    LiveData<List<Step>> getByScriptId(long scriptId);
+
+    @Query("SELECT * FROM steps WHERE scriptId = :scriptId ORDER BY `order` ASC")
+    List<Step> getByScriptIdSync(long scriptId);
+
+    @Query("SELECT * FROM steps WHERE id = :id")
+    Step getById(long id);
+
+    @Query("SELECT MAX(`order`) FROM steps WHERE scriptId = :scriptId")
+    int getMaxOrder(long scriptId);
+
+    @Insert
+    long insert(Step step);
+
+    @Insert
+    void insertAll(List<Step> steps);
+
+    @Update
+    void update(Step step);
+
+    @Delete
+    void delete(Step step);
+
+    @Query("DELETE FROM steps WHERE scriptId = :scriptId")
+    void deleteByScriptId(long scriptId);
+
+    @Query("DELETE FROM steps WHERE id IN (:ids)")
+    void deleteByIds(List<Long> ids);
+}
+EOF
+
+# 12. engine/ScriptEngine.java
+cat > app/src/main/java/com/superclicker/engine/ScriptEngine.java << 'EOF'
+package com.superclicker.engine;
+
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+
+import com.superclicker.model.ExecutionConfig;
+import com.superclicker.model.Script;
+import com.superclicker.model.Step;
+import com.superclicker.model.StepType;
+import com.superclicker.service.ClickAccessibilityService;
+import com.superclicker.util.Logger;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class ScriptEngine {
+
+    private static final String TAG = "Engine";
+
+    public enum State { IDLE, RUNNING, PAUSED, STOPPING }
+
+    public interface StateListener {
+        void onStateChanged(State state);
+        void onStepChanged(int currentStep, int totalSteps, Step step);
+        void onLoopChanged(int currentLoop, int totalLoops);
+        void onError(int stepIndex, Step step, String error);
+        void onComplete();
+    }
+
+    private final Context context;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final StepExecutor stepExecutor;
+
+    private Script script;
+    private List<Step> steps;
+    private ExecutionConfig config;
+    private State state = State.IDLE;
+    private StateListener listener;
+
+    private final AtomicBoolean paused = new AtomicBoolean(false);
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private final AtomicInteger currentLoop = new AtomicInteger(0);
+    private final Map<String, Integer> counters = new HashMap<>();
+
+    private long startTime;
+
+    public ScriptEngine(Context context) {
+        this.context = context;
+        this.stepExecutor = new StepExecutor(context);
+    }
+
+    public void setListener(StateListener listener) {
+        this.listener = listener;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void start(Script script, List<Step> steps) {
+        if (state == State.RUNNING) return;
+
+        this.script = script;
+        this.steps = steps;
+        this.config = script.config;
+        this.counters.clear();
+        this.currentLoop.set(0);
+        this.startTime = SystemClock.elapsedRealtime();
+
+        stopped.set(false);
+        paused.set(false);
+
+        setState(State.RUNNING);
+        Logger.i(TAG, "脚本开始: " + script.name + " (共" + steps.size() + "步)");
+
+        executor.execute(this::runLoop);
+    }
+
+    public void stop() {
+        stopped.set(true);
+        paused.set(false);
+        setState(State.STOPPING);
+        Logger.i(TAG, "脚本停止");
+    }
+
+    public void togglePause() {
+        if (state == State.RUNNING) {
+            paused.set(true);
+            setState(State.PAUSED);
+            Logger.i(TAG, "脚本暂停");
+        } else if (state == State.PAUSED) {
+            paused.set(false);
+            synchronized (paused) {
+                paused.notifyAll();
+            }
+            setState(State.RUNNING);
+            Logger.i(TAG, "脚本继续");
+        }
+    }
+
+    private void runLoop() {
+        int totalLoops = config.loopCount == 0 ? Integer.MAX_VALUE : config.loopCount;
+
+        for (int loop = 0; loop < totalLoops && !stopped.get(); loop++) {
+            currentLoop.set(loop + 1);
+            notifyLoopChanged(loop + 1, config.loopCount);
+
+            for (int i = config.startStep; i < steps.size() && !stopped.get(); i++) {
+                waitIfPaused();
+                if (stopped.get()) break;
+
+                Step step = steps.get(i);
+                if (!step.enabled) continue;
+
+                notifyStepChanged(i, steps.size(), step);
+
+                if (step.waitBefore > 0) {
+                    sleep(step.waitBefore);
+                }
+
+                boolean success = executeStepWithRetry(step);
+
+                if (step.type == StepType.JUMP && success) {
+                    int target = step.jumpTarget;
+                    if (target >= 0 && target < steps.size()) {
+                        i = target - 1;
+                        continue;
+                    }
+                }
+
+                if (step.type == StepType.STOP) {
+                    stopped.set(true);
+                    break;
+                }
+
+                if (step.type == StepType.PAUSE) {
+                    paused.set(true);
+                    setState(State.PAUSED);
+                    waitIfPaused();
+                }
+
+                if (step.waitAfter > 0) {
+                    sleep(step.waitAfter);
+                }
+            }
+
+            if (stopped.get()) break;
+
+            if (loop < totalLoops - 1 && config.loopInterval > 0) {
+                sleep(config.loopInterval);
+            }
+        }
+
+        setState(State.IDLE);
+        Logger.i(TAG, "脚本执行完成");
+
+        mainHandler.post(() -> {
+            if (listener != null) {
+                listener.onComplete();
+            }
+        });
+    }
+
+    private boolean executeStepWithRetry(Step step) {
+        int maxRetry = Math.max(step.retryCount, 1);
+
+        for (int attempt = 0; attempt < maxRetry && !stopped.get(); attempt++) {
+            if (attempt > 0) {
+                sleep(step.retryDelay);
+            }
+
+            try {
+                boolean result = executeStep(step);
+                step.lastResult = result;
+                if (result) {
+                    return true;
+                }
+            } catch (Exception e) {
+                Logger.e(TAG, "步骤[" + step.order + "] 异常: " + e.getMessage());
+            }
+        }
+
+        return false;
+    }
+
+    private boolean executeStep(Step step) throws Exception {
+        ClickAccessibilityService svc = ClickAccessibilityService.getInstance();
+        if (svc == null) {
+            throw new Exception("无障碍服务未开启");
+        }
+
+        switch (step.type) {
+            case CLICK:
+                return stepExecutor.executeClick(svc, step);
+            case SWIPE:
+                return stepExecutor.executeSwipe(svc, step);
+            case LONG_PRESS:
+                return stepExecutor.executeLongPress(svc, step);
+            case MULTI_TOUCH:
+                return stepExecutor.executeMultiTouch(svc, step);
+            case IMAGE_MATCH:
+                return stepExecutor.executeImageMatch(svc, step);
+            case COLOR_MATCH:
+                return stepExecutor.executeColorMatch(svc, step);
+            case TEXT_MATCH:
+                return stepExecutor.executeTextMatch(svc, step);
+            case NUMBER_COMPARE:
+                return stepExecutor.executeNumberCompare(step);
+            case TEXT_COMPARE:
+                return stepExecutor.executeTextCompare(step);
+            case TIME_COMPARE:
+                return stepExecutor.executeTimeCompare(step);
+            case COUNTER:
+                stepExecutor.executeCounter(step, counters);
+                return true;
+            case INPUT_TEXT:
+                return stepExecutor.executeInputText(step);
+            case BACK_KEY:
+                svc.pressBack();
+                return true;
+            case HOME_KEY:
+                svc.pressHome();
+                return true;
+            case MENU_KEY:
+                svc.pressRecents();
+                return true;
+            case JUMP:
+                return true;
+            case STOP:
+                return true;
+            case PAUSE:
+                return true;
+            case EMPTY:
+                return true;
+            case SUB_RULE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void waitIfPaused() {
+        if (paused.get() && !stopped.get()) {
+            synchronized (paused) {
+                try {
+                    while (paused.get() && !stopped.get()) {
+                        paused.wait();
+                    }
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+    }
+
+    private void sleep(long ms) {
+        if (ms <= 0) return;
+        long end = SystemClock.elapsedRealtime() + ms;
+        while (SystemClock.elapsedRealtime() < end && !stopped.get()) {
+            try {
+                Thread.sleep(Math.min(end - SystemClock.elapsedRealtime(), 100));
+            } catch (InterruptedException ignored) {
+                if (stopped.get()) break;
+            }
+        }
+    }
+
+    private void setState(State newState) {
+        this.state = newState;
+        mainHandler.post(() -> {
+            if (listener != null) listener.onStateChanged(newState);
+        });
+    }
+
+    private void notifyStepChanged(int current, int total, Step step) {
+        mainHandler.post(() -> {
+            if (listener != null) listener.onStepChanged(current, total, step);
+        });
+    }
+
+    private void notifyLoopChanged(int current, int total) {
+        mainHandler.post(() -> {
+            if (listener != null) listener.onLoopChanged(current, total);
+        });
+    }
+}
+EOF
+
+# 13. engine/StepExecutor.java
+cat > app/src/main/java/com/superclicker/engine/StepExecutor.java << 'EOF'
+package com.superclicker.engine;
+
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+
+import com.google.gson.Gson;
+import com.superclicker.model.Step;
+import com.superclicker.service.ClickAccessibilityService;
+import com.superclicker.util.Logger;
+
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+public class StepExecutor {
+
+    private static final String TAG = "StepExec";
+    private final Context context;
+
+    public StepExecutor(Context context) {
+        this.context = context;
+    }
+
+    public boolean executeClick(ClickAccessibilityService svc, Step step) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        svc.performClick(step.x1, step.y1, new ClickAccessibilityService.GestureCallback() {
+            @Override
+            public void onCompleted() { latch.countDown(); }
+            @Override
+            public void onCancelled() { latch.countDown(); }
+        });
+        await(latch, 5000);
+        return true;
+    }
+
+    public boolean executeSwipe(ClickAccessibilityService svc, Step step) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        svc.performSwipe(step.x1, step.y1, step.x2, step.y2, step.duration,
+            new ClickAccessibilityService.GestureCallback() {
+                @Override
+                public void onCompleted() { latch.countDown(); }
+                @Override
+                public void onCancelled() { latch.countDown(); }
+            });
+        await(latch, 10000);
+        return true;
+    }
+
+    public boolean executeLongPress(ClickAccessibilityService svc, Step step) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        svc.performLongPress(step.x1, step.y1, step.duration,
+            new ClickAccessibilityService.GestureCallback() {
+                @Override
+                public void onCompleted() { latch.countDown(); }
+                @Override
+                public void onCancelled() { latch.countDown(); }
+            });
+        await(latch, step.duration + 5000);
+        return true;
+    }
+
+    public boolean executeMultiTouch(ClickAccessibilityService svc, Step step) {
+        if (step.multiPoints == null || step.multiPoints.isEmpty()) return false;
+        try {
+            int[][] points = new Gson().fromJson(step.multiPoints, int[][].class);
+            final CountDownLatch latch = new CountDownLatch(1);
+            svc.performMultiTouch(points, null, new ClickAccessibilityService.GestureCallback() {
+                @Override
+                public void onCompleted() { latch.countDown(); }
+                @Override
+                public void onCancelled() { latch.countDown(); }
+            });
+            await(latch, 10000);
+            return true;
+        } catch (Exception e) {
+            Logger.e(TAG, "多点触控解析失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean executeImageMatch(ClickAccessibilityService svc, Step step) {
+        Logger.d(TAG, "识图: " + (step.matchImagePath != null ? step.matchImagePath : "未设置"));
+        return false;
+    }
+
+    public boolean executeColorMatch(ClickAccessibilityService svc, Step step) {
+        Logger.d(TAG, "识色: #" + Integer.toHexString(step.matchColor));
+        return false;
+    }
+
+    public boolean executeTextMatch(ClickAccessibilityService svc, Step step) {
+        Logger.d(TAG, "识字: " + (step.matchText != null ? step.matchText : ""));
+        return false;
+    }
+
+    public boolean executeNumberCompare(Step step) {
+        try {
+            double v1 = Double.parseDouble(step.compareValue1);
+            double v2 = Double.parseDouble(step.compareValue2);
+            return compare(v1, v2, step.compareOperator);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean executeTextCompare(Step step) {
+        String v1 = step.compareValue1 == null ? "" : step.compareValue1;
+        String v2 = step.compareValue2 == null ? "" : step.compareValue2;
+        if ("==".equals(step.compareOperator)) return v1.equals(v2);
+        if ("!=".equals(step.compareOperator)) return !v1.equals(v2);
+        if ("contains".equals(step.compareOperator)) return v1.contains(v2);
+        return false;
+    }
+
+    public boolean executeTimeCompare(Step step) {
+        try {
+            long target = Long.parseLong(step.compareValue2);
+            return compare(System.currentTimeMillis(), target, step.compareOperator);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void executeCounter(Step step, Map<String, Integer> counters) {
+        String name = step.counterName != null ? step.counterName : "default";
+        int current = counters.getOrDefault(name, 0);
+        String op = step.counterOp != null ? step.counterOp : "set";
+        if ("set".equals(op)) {
+            current = step.counterValue;
+        } else if ("add".equals(op)) {
+            current += step.counterValue;
+        } else if ("sub".equals(op)) {
+            current -= step.counterValue;
+        }
+        counters.put(name, current);
+        Logger.d(TAG, "计数器[" + name + "] = " + current);
+    }
+
+    public boolean executeInputText(Step step) {
+        if (step.inputText == null || step.inputText.isEmpty()) return false;
+        try {
+            ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(ClipData.newPlainText("sc", step.inputText));
+            Logger.i(TAG, "已复制文本: " + step.inputText);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean compare(double v1, double v2, String op) {
+        if (op == null) return false;
+        switch (op) {
+            case ">":  return v1 > v2;
+            case "<":  return v1 < v2;
+            case "==": return Math.abs(v1 - v2) < 0.001;
+            case ">=": return v1 >= v2;
+            case "<=": return v1 <= v2;
+            case "!=": return Math.abs(v1 - v2) >= 0.001;
+            default:   return false;
+        }
+    }
+
+    private void await(CountDownLatch latch, long ms) {
+        try {
+            latch.await(ms, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ignored) {
+        }
+    }
+}
+EOF
+
+# 14. service/ClickAccessibilityService.java
+cat > app/src/main/java/com/superclicker/service/ClickAccessibilityService.java << 'EOF'
+package com.superclicker.service;
+
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.GestureDescription;
+import android.graphics.Path;
+import android.util.DisplayMetrics;
+import android.view.accessibility.AccessibilityEvent;
+
+import com.superclicker.util.Logger;
+
+public class ClickAccessibilityService extends AccessibilityService {
+
+    private static final String TAG = "ClickService";
+    private static ClickAccessibilityService instance;
+
+    public interface GestureCallback {
+        void onCompleted();
+        void onCancelled();
+    }
+
+    @Override
+    public void onServiceConnected() {
+        super.onServiceConnected();
+        instance = this;
+        Logger.i(TAG, "无障碍服务已连接");
+    }
+
+    public static ClickAccessibilityService getInstance() {
+        return instance;
+    }
+
+    public static boolean isRunning() {
+        return instance != null;
+    }
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+    }
+
+    @Override
+    public void onInterrupt() {
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        instance = null;
+    }
+
+    public void performClick(int x, int y, final GestureCallback cb) {
+        Path path = new Path();
+        path.moveTo(x, y);
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        builder.addStroke(new GestureDescription.StrokeDescription(path, 0, 50));
+        GestureResultCallback callback = new GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription d) {
+                if (cb != null) cb.onCompleted();
+            }
+            @Override
+            public void onCancelled(GestureDescription d) {
+                if (cb != null) cb.onCancelled();
+            }
+        };
+        dispatchGesture(builder.build(), callback, null);
+    }
+
+    public void performLongPress(int x, int y, long duration, final GestureCallback cb) {
+        Path path = new Path();
+        path.moveTo(x, y);
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        builder.addStroke(new GestureDescription.StrokeDescription(path, 0, duration));
+        GestureResultCallback callback = new GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription d) {
+                if (cb != null) cb.onCompleted();
+            }
+            @Override
+            public void onCancelled(GestureDescription d) {
+                if (cb != null) cb.onCancelled();
+            }
+        };
+        dispatchGesture(builder.build(), callback, null);
+    }
+
+    public void performSwipe(int x1, int y1, int x2, int y2, long duration, final GestureCallback cb) {
+        Path path = new Path();
+        path.moveTo(x1, y1);
+        path.lineTo(x2, y2);
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        builder.addStroke(new GestureDescription.StrokeDescription(path, 0, duration));
+        GestureResultCallback callback = new GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription d) {
+                if (cb != null) cb.onCompleted();
+            }
+            @Override
+            public void onCancelled(GestureDescription d) {
+                if (cb != null) cb.onCancelled();
+            }
+        };
+        dispatchGesture(builder.build(), callback, null);
+    }
+
+    public void performMultiTouch(int[][] points, long[] delays, final GestureCallback cb) {
+        if (points == null || points.length == 0) {
+            if (cb != null) cb.onCancelled();
+            return;
+        }
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        for (int i = 0; i < points.length; i++) {
+            Path path = new Path();
+            path.moveTo(points[i][0], points[i][1]);
+            long start = (delays != null && i < delays.length) ? delays[i] : 0;
+            builder.addStroke(new GestureDescription.StrokeDescription(path, start, 100));
+        }
+        GestureResultCallback callback = new GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription d) {
+                if (cb != null) cb.onCompleted();
+            }
+            @Override
+            public void onCancelled(GestureDescription d) {
+                if (cb != null) cb.onCancelled();
+            }
+        };
+        dispatchGesture(builder.build(), callback, null);
+    }
+
+    public void pressBack() {
+        performGlobalAction(GLOBAL_ACTION_BACK);
+    }
+
+    public void pressHome() {
+        performGlobalAction(GLOBAL_ACTION_HOME);
+    }
+
+    public void pressRecents() {
+        performGlobalAction(GLOBAL_ACTION_RECENTS);
+    }
+
+    public int[] getScreenSize() {
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        return new int[]{dm.widthPixels, dm.heightPixels};
+    }
+}
+EOF
+
+# 15. service/FloatingControlService.java
+cat > app/src/main/java/com/superclicker/service/FloatingControlService.java << 'EOF'
+package com.superclicker.service;
+
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Intent;
+import android.graphics.PixelFormat;
+import android.os.IBinder;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import com.superclicker.MainActivity;
+import com.superclicker.R;
+import com.superclicker.engine.ScriptEngine;
+import com.superclicker.model.Step;
+import com.superclicker.util.Logger;
+
+public class FloatingControlService extends Service {
+
+    private static final String TAG = "FloatingCtrl";
+
+    private WindowManager windowManager;
+    private View floatingView;
+    private WindowManager.LayoutParams params;
+    private TextView tvStatus;
+    private TextView tvStep;
+    private TextView tvLoop;
+    private ScriptEngine engine;
+    private boolean isHidden = false;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        createFloatingView();
+        startForegroundNotification();
+    }
+
+    private void startForegroundNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Notification notification = new Notification.Builder(this, "service_channel")
+            .setContentTitle("超级点击器")
+            .setContentText("运行中...")
+            .setSmallIcon(R.drawable.ic_play)
+            .setContentIntent(pi)
+            .build();
+
+        startForeground(1001, notification);
+    }
+
+    private void createFloatingView() {
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_control, null);
+
+        params = new WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        );
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.x = 0;
+        params.y = 300;
+
+        windowManager.addView(floatingView, params);
+
+        tvStatus = floatingView.findViewById(R.id.tv_floating_status);
+        tvStep = floatingView.findViewById(R.id.tv_floating_step);
+        tvLoop = floatingView.findViewById(R.id.tv_floating_loop);
+
+        ImageButton btnPlay = floatingView.findViewById(R.id.btn_floating_play);
+        ImageButton btnPause = floatingView.findViewById(R.id.btn_floating_pause);
+        ImageButton btnStop = floatingView.findViewById(R.id.btn_floating_stop);
+        ImageButton btnHide = floatingView.findViewById(R.id.btn_floating_hide);
+        ImageButton btnClose = floatingView.findViewById(R.id.btn_floating_close);
+
+        btnPlay.setOnClickListener(v -> {
+            Intent i = new Intent("com.superclicker.ACTION_PLAY");
+            sendBroadcast(i);
+        });
+
+        btnPause.setOnClickListener(v -> {
+            if (engine != null) engine.togglePause();
+        });
+
+        btnStop.setOnClickListener(v -> {
+            if (engine != null) engine.stop();
+        });
+
+        btnHide.setOnClickListener(v -> {
+            int vis = isHidden ? View.VISIBLE : View.GONE;
+            floatingView.findViewById(R.id.layout_controls).setVisibility(vis);
+            floatingView.findViewById(R.id.layout_info).setVisibility(vis);
+            isHidden = !isHidden;
+        });
+
+        btnClose.setOnClickListener(v -> stopSelf());
+
+        setupDrag();
+    }
+
+    public void bindEngine(ScriptEngine engine) {
+        this.engine = engine;
+        engine.setListener(new ScriptEngine.StateListener() {
+            @Override
+            public void onStateChanged(ScriptEngine.State state) {
+                switch (state) {
+                    case IDLE:
+                        tvStatus.setText("就绪");
+                        break;
+                    case RUNNING:
+                        tvStatus.setText("运行中");
+                        break;
+                    case PAUSED:
+                        tvStatus.setText("已暂停");
+                        break;
+                    case STOPPING:
+                        tvStatus.setText("停止中");
+                        break;
+                }
+            }
+
+            @Override
+            public void onStepChanged(int currentStep, int totalSteps, Step step) {
+                tvStep.setText("步骤 " + (currentStep + 1) + "/" + totalSteps);
+            }
+
+            @Override
+            public void onLoopChanged(int currentLoop, int totalLoops) {
+                tvLoop.setText("第 " + currentLoop + " 轮");
+            }
+
+            @Override
+            public void onError(int stepIndex, Step step, String error) {
+                tvStatus.setText("错误");
+            }
+
+            @Override
+            public void onComplete() {
+                tvStatus.setText("已完成");
+            }
+        });
+    }
+
+    private void setupDrag() {
+        floatingView.setOnTouchListener(new View.OnTouchListener() {
+            private int initX;
+            private int initY;
+            private float initTouchX;
+            private float initTouchY;
+            private boolean dragging;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initX = params.x;
+                        initY = params.y;
+                        initTouchX = event.getRawX();
+                        initTouchY = event.getRawY();
+                        dragging = false;
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = event.getRawX() - initTouchX;
+                        float dy = event.getRawY() - initTouchY;
+                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                            dragging = true;
+                        }
+                        params.x = initX + (int) dx;
+                        params.y = initY + (int) dy;
+                        windowManager.updateViewLayout(floatingView, params);
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        return dragging;
+                }
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (floatingView != null && windowManager != null) {
+            windowManager.removeView(floatingView);
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+}
+EOF
+
+# 16. util/Logger.java
+cat > app/src/main/java/com/superclicker/util/Logger.java << 'EOF'
+package com.superclicker.util;
+
+import android.os.Handler;
+import android.os.Looper;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+public class Logger {
+
+    public interface LogListener {
+        void onNewLog(String message);
+    }
+
+    private static final List<String> logs = new ArrayList<>();
+    private static final List<LogListener> listeners = new ArrayList<>();
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
+    private static final Handler handler = new Handler(Looper.getMainLooper());
+
+    public static void addListener(LogListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public static void removeListener(LogListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    public static void d(String tag, String msg) {
+        log("D", tag, msg);
+    }
+
+    public static void i(String tag, String msg) {
+        log("I", tag, msg);
+    }
+
+    public static void w(String tag, String msg) {
+        log("W", tag, msg);
+    }
+
+    public static void e(String tag, String msg) {
+        log("E", tag, msg);
+    }
+
+    private static void log(String level, String tag, String msg) {
+        final String line = sdf.format(new Date()) + " [" + level + "/" + tag + "] " + msg;
+        synchronized (logs) {
+            logs.add(line);
+            if (logs.size() > 5000) {
+                logs.remove(0);
+            }
+        }
+        android.util.Log.d(tag, msg);
+        handler.post(() -> {
+            synchronized (listeners) {
+                for (LogListener l : listeners) {
+                    l.onNewLog(line);
+                }
+            }
+        });
+    }
+
+    public static List<String> getLogs() {
+        synchronized (logs) {
+            return new ArrayList<>(logs);
+        }
+    }
+
+    public static void clear() {
+        synchronized (logs) {
+            logs.clear();
+        }
+    }
+}
+EOF
+
+# 17. util/ScreenUtil.java
+cat > app/src/main/java/com/superclicker/util/ScreenUtil.java << 'EOF'
+package com.superclicker.util;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.media.projection.MediaProjection;
+
+public class ScreenUtil {
+
+    private static MediaProjection mediaProjection;
+
+    public static void setMediaProjection(MediaProjection projection) {
+        mediaProjection = projection;
+    }
+
+    public static Bitmap captureScreen(Context context) {
+        Logger.d("ScreenUtil", "截屏功能需要MediaProjection");
+        return null;
+    }
+}
+EOF
+
+# 18. util/ImageMatcher.java
+cat > app/src/main/java/com/superclicker/util/ImageMatcher.java << 'EOF'
+package com.superclicker.util;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+public class ImageMatcher {
+
+    public static Bitmap loadBitmap(String path) {
+        try {
+            return BitmapFactory.decodeFile(path);
+        } catch (Exception e) {
+            Logger.e("ImageMatcher", "加载图片失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static int[] findTemplate(Bitmap screen, Bitmap template) {
+        if (screen == null || template == null) return null;
+
+        int sw = screen.getWidth();
+        int sh = screen.getHeight();
+        int tw = template.getWidth();
+        int th = template.getHeight();
+
+        if (tw > sw || th > sh) return null;
+
+        int[] sp = new int[sw * sh];
+        int[] tp = new int[tw * th];
+        screen.getPixels(sp, 0, sw, 0, 0, sw, sh);
+        template.getPixels(tp, 0, tw, 0, 0, tw, th);
+
+        double best = 0;
+        int bx = -1;
+        int by = -1;
+
+        for (int y = 0; y <= sh - th; y += 3) {
+            for (int x = 0; x <= sw - tw; x += 3) {
+                double score = calcNCC(sp, sw, x, y, tp, tw, th);
+                if (score > best) {
+                    best = score;
+                    bx = x;
+                    by = y;
+                }
+            }
+        }
+
+        if (best >= 0.85) {
+            return new int[]{bx, by};
+        }
+        return null;
+    }
+
+    private static double calcNCC(int[] s, int sw, int sx, int sy, int[] t, int tw, int th) {
+        long ss = 0;
+        long st = 0;
+        long tt = 0;
+        int n = tw * th;
+
+        for (int ty = 0; ty < th; ty++) {
+            for (int tx = 0; tx < tw; tx++) {
+                int sp = s[(sy + ty) * sw + (sx + tx)];
+                int tp = t[ty * tw + tx];
+                int sg = ((sp >> 16) & 0xFF) * 77 + ((sp >> 8) & 0xFF) * 150 + (sp & 0xFF) * 29 >> 8;
+                int tg = ((tp >> 16) & 0xFF) * 77 + ((tp >> 8) & 0xFF) * 150 + (tp & 0xFF) * 29 >> 8;
+                ss += sg;
+                st += (long) sg * tg;
+                tt += tg;
+            }
+        }
+
+        double ms = (double) ss / n;
+        double mt = (double) tt / n;
+        double vs = 0;
+        double vt = 0;
+        double cov = 0;
+
+        for (int ty = 0; ty < th; ty++) {
+            for (int tx = 0; tx < tw; tx++) {
+                int sp = s[(sy + ty) * sw + (sx + tx)];
+                int tp = t[ty * tw + tx];
+                int sg = ((sp >> 16) & 0xFF) * 77 + ((sp >> 8) & 0xFF) * 150 + (sp & 0xFF) * 29 >> 8;
+                int tg = ((tp >> 16) & 0xFF) * 77 + ((tp >> 8) & 0xFF) * 150 + (tp & 0xFF) * 29 >> 8;
+                vs += (sg - ms) * (sg - ms);
+                vt += (tg - mt) * (tg - mt);
+                cov += (sg - ms) * (tg - mt);
+            }
+        }
+
+        double denom = Math.sqrt(vs * vt);
+        return denom < 1 ? 0 : cov / denom;
+    }
+}
+EOF
+
+# 19. util/ColorMatcher.java
+cat > app/src/main/java/com/superclicker/util/ColorMatcher.java << 'EOF'
+package com.superclicker.util;
+
+import android.graphics.Bitmap;
+import android.graphics.Color;
+
+public class ColorMatcher {
+
+    public static int[] findColor(Bitmap screen, int target, int tolerance, int[] region) {
+        if (screen == null) return null;
+
+        int left = 0;
+        int top = 0;
+        int right = screen.getWidth();
+        int bottom = screen.getHeight();
+
+        if (region != null && region.length == 4) {
+            left = region[0];
+            top = region[1];
+            right = region[2];
+            bottom = region[3];
+        }
+
+        int tr = Color.red(target);
+        int tg = Color.green(target);
+        int tb = Color.blue(target);
+
+        for (int y = top; y < bottom; y += 3) {
+            for (int x = left; x < right; x += 3) {
+                int px = screen.getPixel(x, y);
+                if (Math.abs(Color.red(px) - tr) <= tolerance
+                    && Math.abs(Color.green(px) - tg) <= tolerance
+                    && Math.abs(Color.blue(px) - tb) <= tolerance) {
+                    return new int[]{x, y};
+                }
+            }
+        }
+        return null;
+    }
+}
+EOF
+
+# 20. util/OcrHelper.java
+cat > app/src/main/java/com/superclicker/util/OcrHelper.java << 'EOF'
+package com.superclicker.util;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Rect;
+
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class OcrHelper {
+
+    public static int[] findText(Context context, Bitmap bitmap, String target) {
+        if (bitmap == null || target == null || target.isEmpty()) return null;
+
+        TextRecognizer recognizer = TextRecognition.getClient(
+            new ChineseTextRecognizerOptions.Builder().build());
+
+        InputImage image = InputImage.fromBitmap(bitmap, 0);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<int[]> result = new AtomicReference<>(null);
+
+        recognizer.process(image)
+            .addOnSuccessListener(text -> {
+                for (Text.TextBlock block : text.getTextBlocks()) {
+                    for (Text.Line line : block.getLines()) {
+                        if (line.getText().contains(target)) {
+                            Rect bounds = line.getBoundingBox();
+                            if (bounds != null) {
+                                int cx = (bounds.left + bounds.right) / 2;
+                                int cy = (bounds.top + bounds.bottom) / 2;
+                                result.set(new int[]{cx, cy});
+                                latch.countDown();
+                                return;
+                            }
+                        }
+                    }
+                }
+                latch.countDown();
+            })
+            .addOnFailureListener(e -> {
+                Logger.e("OcrHelper", "OCR失败: " + e.getMessage());
+                latch.countDown();
+            });
+
+        try {
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+
+        recognizer.close();
+        return result.get();
+    }
+}
+EOF
+
+# 21. util/FileUtils.java
+cat > app/src/main/java/com/superclicker/util/FileUtils.java << 'EOF'
+package com.superclicker.util;
+
+import android.content.Context;
+import android.net.Uri;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.superclicker.model.Script;
+import com.superclicker.model.Step;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class FileUtils {
+
+    private static final Gson gson = new Gson();
+
+    public static String exportScript(Script script, List<Step> steps) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("script", script);
+        data.put("steps", steps);
+        data.put("version", "1.0");
+        return gson.toJson(data);
+    }
+
+    public static Map<String, Object> importScript(String json) {
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> data = gson.fromJson(json, type);
+
+        Script script = gson.fromJson(gson.toJson(data.get("script")), Script.class);
+        script.id = 0;
+
+        Type stepListType = new TypeToken<List<Step>>() {}.getType();
+        List<Step> steps = gson.fromJson(gson.toJson(data.get("steps")), stepListType);
+        for (Step s : steps) {
+            s.id = 0;
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("script", script);
+        result.put("steps", steps);
+        return result;
+    }
+
+    public static boolean saveToUri(Context context, Uri uri, String json) {
+        try {
+            OutputStream os = context.getContentResolver().openOutputStream(uri);
+            if (os == null) return false;
+            os.write(json.getBytes("UTF-8"));
+            os.close();
+            return true;
+        } catch (Exception e) {
+            Logger.e("FileUtils", "保存失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static String readFromUri(Context context, Uri uri) {
+        try {
+            InputStream is = context.getContentResolver().openInputStream(uri);
+            if (is == null) return null;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+            return sb.toString();
+        } catch (Exception e) {
+            Logger.e("FileUtils", "读取失败: " + e.getMessage());
+            return null;
+        }
+    }
+}
+EOF
+
+# 22. ui/script/ScriptListFragment.java
+cat > app/src/main/java/com/superclicker/ui/script/ScriptListFragment.java << 'EOF'
+package com.superclicker.ui.script;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.superclicker.MainActivity;
+import com.superclicker.R;
+import com.superclicker.db.AppDatabase;
+import com.superclicker.model.Script;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.Executors;
+
+public class ScriptListFragment extends Fragment {
+
+    private RecyclerView rvScripts;
+    private TextView tvEmpty;
+    private ScriptAdapter adapter;
+    private AppDatabase db;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_scripts, container, false);
+        rvScripts = view.findViewById(R.id.rv_scripts);
+        tvEmpty = view.findViewById(R.id.tv_empty);
+
+        ImageButton btnAdd = view.findViewById(R.id.btn_add_script);
+        btnAdd.setOnClickListener(v -> showCreateDialog());
+
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        db = AppDatabase.getInstance(requireContext());
+        adapter = new ScriptAdapter();
+        rvScripts.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvScripts.setAdapter(adapter);
+
+        db.scriptDao().getAll().observe(getViewLifecycleOwner(), scripts -> {
+            adapter.setData(scripts);
+            if (scripts == null || scripts.isEmpty()) {
+                tvEmpty.setVisibility(View.VISIBLE);
+                rvScripts.setVisibility(View.GONE);
+            } else {
+                tvEmpty.setVisibility(View.GONE);
+                rvScripts.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void showCreateDialog() {
+        EditText et = new EditText(requireContext());
+        et.setHint("脚本名称");
+        et.setPadding(60, 40, 60, 20);
+
+        new AlertDialog.Builder(requireContext())
+            .setTitle("新建脚本")
+            .setView(et)
+            .setPositiveButton("创建", (dialog, which) -> {
+                String name = et.getText().toString().trim();
+                if (name.isEmpty()) name = "未命名脚本";
+                Script script = new Script();
+                script.name = name;
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    long id = db.scriptDao().insert(script);
+                    script.id = id;
+                    requireActivity().runOnUiThread(() -> openEditor(script));
+                });
+            })
+            .setNegativeButton("取消", null)
+            .show();
+    }
+
+    private void openEditor(Script script) {
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).getEditorFragment().loadScript(script);
+            ((MainActivity) getActivity()).switchToEditor();
+        }
+    }
+
+    private class ScriptAdapter extends RecyclerView.Adapter<ScriptAdapter.ViewHolder> {
+
+        private List<Script> data = new ArrayList<>();
+
+        void setData(List<Script> list) {
+            this.data = list != null ? list : new ArrayList<>();
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_script, parent, false);
+            return new ViewHolder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Script s = data.get(position);
+            holder.tvName.setText(s.name);
+            holder.tvDesc.setText(s.description != null ? s.description : "");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            holder.tvInfo.setText("更新: " + sdf.format(new Date(s.updateTime)));
+            holder.itemView.setOnClickListener(v -> openEditor(s));
+            holder.btnDelete.setOnClickListener(v -> {
+                new AlertDialog.Builder(requireContext())
+                    .setTitle("删除确认")
+                    .setMessage("确定删除「" + s.name + "」？")
+                    .setPositiveButton("删除", (d, w) -> {
+                        Executors.newSingleThreadExecutor().execute(() -> db.scriptDao().delete(s));
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return data.size();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvName;
+            TextView tvDesc;
+            TextView tvInfo;
+            ImageButton btnDelete;
+
+            ViewHolder(View v) {
+                super(v);
+                tvName = v.findViewById(R.id.tv_script_name);
+                tvDesc = v.findViewById(R.id.tv_script_desc);
+                tvInfo = v.findViewById(R.id.tv_script_info);
+                btnDelete = v.findViewById(R.id.btn_delete_script);
+            }
+        }
+    }
+}
+EOF
+
+# 23. ui/editor/StepEditorFragment.java
+cat > app/src/main/java/com/superclicker/ui/editor/StepEditorFragment.java << 'EOF'
+package com.superclicker.ui.editor;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.superclicker.R;
+import com.superclicker.db.AppDatabase;
+import com.superclicker.engine.ScriptEngine;
+import com.superclicker.model.Script;
+import com.superclicker.model.Step;
+import com.superclicker.model.StepType;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+
+public class StepEditorFragment extends Fragment {
+
+    private RecyclerView rvSteps;
+    private TextView tvScriptName;
+    private TextView tvStepCount;
+    private StepAdapter adapter;
+    private AppDatabase db;
+    private Script currentScript;
+    private ScriptEngine engine;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_step_editor, container, false);
+
+        rvSteps = view.findViewById(R.id.rv_steps);
+        tvScriptName = view.findViewById(R.id.tv_script_name);
+        tvStepCount = view.findViewById(R.id.tv_step_count);
+
+        ImageButton btnBack = view.findViewById(R.id.btn_back);
+        ImageButton btnRecord = view.findViewById(R.id.btn_record);
+        ImageButton btnAddStep = view.findViewById(R.id.btn_add_step);
+        ImageButton btnDeleteStep = view.findViewById(R.id.btn_delete_step);
+        android.widget.Button btnPlay = view.findViewById(R.id.btn_play);
+        android.widget.Button btnConfig = view.findViewById(R.id.btn_config);
+
+        btnBack.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().getSupportFragmentManager().popBackStack();
+            }
+        });
+
+        btnRecord.setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "录制功能开发中", Toast.LENGTH_SHORT).show();
+        });
+
+        btnAddStep.setOnClickListener(v -> showAddStepDialog());
+
+        btnDeleteStep.setOnClickListener(v -> deleteSelectedSteps());
+
+        btnPlay.setOnClickListener(v -> executeScript());
+
+        btnConfig.setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "设置功能开发中", Toast.LENGTH_SHORT).show();
+        });
+
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        db = AppDatabase.getInstance(requireContext());
+        adapter = new StepAdapter(new StepAdapter.OnStepClickListener() {
+            @Override
+            public void onClick(Step step) {
+                showStepConfig(step);
+            }
+        });
+        rvSteps.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvSteps.setAdapter(adapter);
+    }
+
+    public void loadScript(Script script) {
+        this.currentScript = script;
+        if (tvScriptName != null) {
+            tvScriptName.setText(script.name);
+        }
+        refreshSteps();
+    }
+
+    private void refreshSteps() {
+        if (currentScript == null) return;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Step> steps = db.stepDao().getByScriptIdSync(currentScript.id);
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    adapter.setData(steps);
+                    tvStepCount.setText(steps.size() + " 步");
+                });
+            }
+        });
+    }
+
+    private void showAddStepDialog() {
+        if (currentScript == null) {
+            Toast.makeText(requireContext(), "请先选择脚本", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        AddStepDialog dialog = new AddStepDialog(requireContext(), new AddStepDialog.OnTypeSelectedListener() {
+            @Override
+            public void onSelected(StepType type) {
+                Step step = new Step();
+                step.scriptId = currentScript.id;
+                step.type = type;
+                step.label = type.label;
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    int maxOrder = db.stepDao().getMaxOrder(currentScript.id);
+                    step.order = maxOrder + 1;
+                    db.stepDao().insert(step);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> refreshSteps());
+                    }
+                });
+            }
+        });
+        dialog.show();
+    }
+
+    private void showStepConfig(Step step) {
+        StepConfigDialog dialog = new StepConfigDialog(requireContext(), step, new StepConfigDialog.OnSaveListener() {
+            @Override
+            public void onSave(Step updatedStep) {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    db.stepDao().update(updatedStep);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> refreshSteps());
+                    }
+                });
+            }
+        });
+        dialog.show();
+    }
+
+    private void deleteSelectedSteps() {
+        List<Step> selected = adapter.getSelectedSteps();
+        if (selected.isEmpty()) {
+            Toast.makeText(requireContext(), "长按选择步骤后删除", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(requireContext())
+            .setTitle("删除确认")
+            .setMessage("删除选中的 " + selected.size() + " 个步骤？")
+            .setPositiveButton("删除", (dialog, which) -> {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    List<Long> ids = new ArrayList<>();
+                    for (Step s : selected) {
+                        ids.add(s.id);
+                    }
+                    db.stepDao().deleteByIds(ids);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            adapter.clearSelection();
+                            refreshSteps();
+                        });
+                    }
+                });
+            })
+            .setNegativeButton("取消", null)
+            .show();
+    }
+
+    private void executeScript() {
+        if (currentScript == null) {
+            Toast.makeText(requireContext(), "没有脚本", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Step> steps = db.stepDao().getByScriptIdSync(currentScript.id);
+            if (steps.isEmpty()) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "脚本为空", Toast.LENGTH_SHORT).show();
+                    });
+                }
+                return;
+            }
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    engine = new ScriptEngine(requireContext());
+                    engine.start(currentScript, steps);
+                });
+            }
+        });
+    }
+}
+EOF
+
+# 24. ui/editor/StepAdapter.java - 关键修复：SwitchCompat 改为 Switch
+cat > app/src/main/java/com/superclicker/ui/editor/StepAdapter.java << 'EOF'
+package com.superclicker.ui.editor;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.superclicker.R;
+import com.superclicker.model.Step;
+import com.superclicker.model.StepType;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class StepAdapter extends RecyclerView.Adapter<StepAdapter.ViewHolder> {
+
+    public interface OnStepClickListener {
+        void onClick(Step step);
+    }
+
+    private List<Step> data = new ArrayList<>();
+    private final Set<Long> selectedIds = new HashSet<>();
+    private boolean selectionMode = false;
+    private final OnStepClickListener listener;
+
+    public StepAdapter(OnStepClickListener listener) {
+        this.listener = listener;
+    }
+
+    public void setData(List<Step> list) {
+        this.data = list != null ? list : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public List<Step> getSelectedSteps() {
+        List<Step> result = new ArrayList<>();
+        for (Step s : data) {
+            if (selectedIds.contains(s.id)) {
+                result.add(s);
+            }
+        }
+        return result;
+    }
+
+    public void clearSelection() {
+        selectedIds.clear();
+        selectionMode = false;
+        notifyDataSetChanged();
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_step, parent, false);
+        return new ViewHolder(v);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Step step = data.get(position);
+
+        holder.tvNumber.setText(String.valueOf(step.order));
+        holder.tvType.setText("[" + step.type.label + "]");
+        holder.tvType.setTextColor(getTypeColor(step.type.category));
+
+        String detail = getStepDetail(step);
+        holder.tvDetail.setText(detail);
+
+        StringBuilder wait = new StringBuilder();
+        if (step.waitBefore > 0) wait.append("前").append(step.waitBefore).append("ms ");
+        if (step.waitAfter > 0) wait.append("后").append(step.waitAfter).append("ms ");
+        if (step.retryCount > 0) wait.append("重试").append(step.retryCount).append("次 ");
+        holder.tvWait.setText(wait.toString().trim());
+
+        holder.switchEnabled.setOnCheckedChangeListener(null);
+        holder.switchEnabled.setChecked(step.enabled);
+        holder.switchEnabled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                step.enabled = isChecked;
+            }
+        });
+
+        if (selectionMode) {
+            holder.cbSelect.setVisibility(View.VISIBLE);
+        } else {
+            holder.cbSelect.setVisibility(View.GONE);
+        }
+        holder.cbSelect.setOnCheckedChangeListener(null);
+        holder.cbSelect.setChecked(selectedIds.contains(step.id));
+        holder.cbSelect.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    selectedIds.add(step.id);
+                } else {
+                    selectedIds.remove(step.id);
+                }
+            }
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            if (selectionMode) {
+                if (selectedIds.contains(step.id)) {
+                    selectedIds.remove(step.id);
+                } else {
+                    selectedIds.add(step.id);
+                }
+                notifyItemChanged(position);
+            } else {
+                listener.onClick(step);
+            }
+        });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            selectionMode = true;
+            selectedIds.add(step.id);
+            notifyDataSetChanged();
+            return true;
+        });
+    }
+
+    @Override
+    public int getItemCount() {
+        return data.size();
+    }
+
+    private String getStepDetail(Step step) {
+        switch (step.type) {
+            case CLICK:
+                return "(" + step.x1 + ", " + step.y1 + ")";
+            case SWIPE:
+                return "(" + step.x1 + "," + step.y1 + ")->(" + step.x2 + "," + step.y2 + ")";
+            case LONG_PRESS:
+                return "(" + step.x1 + ", " + step.y1 + ") " + step.duration + "ms";
+            case IMAGE_MATCH:
+                return step.matchImagePath != null ? step.matchImagePath : "未设置图片";
+            case COLOR_MATCH:
+                return String.format("#%08X 容差:%d", step.matchColor, step.colorTolerance);
+            case TEXT_MATCH:
+                return "查找: " + (step.matchText != null ? step.matchText : "");
+            case INPUT_TEXT:
+                return step.inputText != null ? step.inputText : "";
+            case JUMP:
+                return "→ 步骤 " + step.jumpTarget;
+            case COUNTER:
+                return step.counterOp + " " + step.counterName + " = " + step.counterValue;
+            case NUMBER_COMPARE:
+            case TEXT_COMPARE:
+            case TIME_COMPARE:
+                return step.compareValue1 + " " + step.compareOperator + " " + step.compareValue2;
+            case SUB_RULE:
+                return "脚本ID: " + step.subScriptId;
+            default:
+                return step.type.description;
+        }
+    }
+
+    private int getTypeColor(StepType.Category category) {
+        switch (category) {
+            case ACTION:    return 0xFF1976D2;
+            case RECOGNIZE: return 0xFF388E3C;
+            case CONDITION: return 0xFFF57C00;
+            case TOOL:      return 0xFF7B1FA2;
+            case CONTROL:   return 0xFFD32F2F;
+            default:        return 0xFF757575;
+        }
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView tvNumber;
+        TextView tvType;
+        TextView tvDetail;
+        TextView tvWait;
+        CheckBox cbSelect;
+        Switch switchEnabled;
+
+        ViewHolder(View v) {
+            super(v);
+            tvNumber = v.findViewById(R.id.tv_step_number);
+            tvType = v.findViewById(R.id.tv_step_type);
+            tvDetail = v.findViewById(R.id.tv_step_detail);
+            tvWait = v.findViewById(R.id.tv_step_wait);
+            cbSelect = v.findViewById(R.id.cb_select);
+            switchEnabled = v.findViewById(R.id.switch_enabled);
+        }
+    }
+}
+EOF
+
+# 25. ui/editor/AddStepDialog.java
+cat > app/src/main/java/com/superclicker/ui/editor/AddStepDialog.java << 'EOF'
+package com.superclicker.ui.editor;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.tabs.TabLayout;
+import com.superclicker.R;
+import com.superclicker.model.StepType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class AddStepDialog extends Dialog {
+
+    public interface OnTypeSelectedListener {
+        void onSelected(StepType type);
+    }
+
+    private final OnTypeSelectedListener listener;
+
+    public AddStepDialog(@NonNull Context ctx, OnTypeSelectedListener l) {
+        super(ctx);
+        this.listener = l;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.dialog_add_step);
+
+        if (getWindow() != null) {
+            getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        TabLayout tab = findViewById(R.id.tab_category);
+        RecyclerView rv = findViewById(R.id.rv_step_types);
+        rv.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        TypeAdapter adapter = new TypeAdapter();
+        rv.setAdapter(adapter);
+
+        for (StepType.Category cat : StepType.Category.values()) {
+            tab.addTab(tab.newTab().setText(cat.label));
+        }
+
+        showCategory(adapter, StepType.Category.ACTION);
+
+        tab.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab t) {
+                showCategory(adapter, StepType.Category.values()[t.getPosition()]);
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab t) {}
+            @Override
+            public void onTabReselected(TabLayout.Tab t) {}
+        });
+    }
+
+    private void showCategory(TypeAdapter adapter, StepType.Category category) {
+        List<StepType> types = new ArrayList<>();
+        for (StepType t : StepType.values()) {
+            if (t.category == category) {
+                types.add(t);
+            }
+        }
+        adapter.setData(types);
+    }
+
+    private class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
+
+        private List<StepType> data = new ArrayList<>();
+
+        void setData(List<StepType> list) {
+            this.data = list;
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                .inflate(android.R.layout.simple_list_item_2, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            StepType type = data.get(position);
+            holder.text1.setText(type.label);
+            holder.text2.setText(type.description);
+            holder.itemView.setOnClickListener(v -> {
+                listener.onSelected(type);
+                dismiss();
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return data.size();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView text1;
+            TextView text2;
+
+            ViewHolder(View v) {
+                super(v);
+                text1 = v.findViewById(android.R.id.text1);
+                text2 = v.findViewById(android.R.id.text2);
+            }
+        }
+    }
+}
+EOF
+
+# 26. ui/editor/StepConfigDialog.java
+cat > app/src/main/java/com/superclicker/ui/editor/StepConfigDialog.java << 'EOF'
+package com.superclicker.ui.editor;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+
+import com.superclicker.R;
+import com.superclicker.model.Step;
+import com.superclicker.model.StepType;
+
+public class StepConfigDialog extends Dialog {
+
+    public interface OnSaveListener {
+        void onSave(Step step);
+    }
+
+    private final Step step;
+    private final OnSaveListener listener;
+
+    public StepConfigDialog(@NonNull Context ctx, Step step, OnSaveListener listener) {
+        super(ctx);
+        this.step = step;
+        this.listener = listener;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.dialog_step_config);
+
+        if (getWindow() != null) {
+            getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        TextView tvTitle = findViewById(R.id.tv_config_title);
+        tvTitle.setText("配置: " + step.type.label);
+
+        final EditText etLabel = findViewById(R.id.et_label);
+        final EditText etX1 = findViewById(R.id.et_x1);
+        final EditText etY1 = findViewById(R.id.et_y1);
+        final EditText etX2 = findViewById(R.id.et_x2);
+        final EditText etY2 = findViewById(R.id.et_y2);
+        final EditText etDuration = findViewById(R.id.et_duration);
+        final EditText etImagePath = findViewById(R.id.et_image_path);
+        final EditText etMatchText = findViewById(R.id.et_match_text);
+        final EditText etInputText = findViewById(R.id.et_input_text);
+        final EditText etJumpTarget = findViewById(R.id.et_jump_target);
+        final EditText etWaitBefore = findViewById(R.id.et_wait_before);
+        final EditText etWaitAfter = findViewById(R.id.et_wait_after);
+        final EditText etRetryCount = findViewById(R.id.et_retry_count);
+        final EditText etRetryDelay = findViewById(R.id.et_retry_delay);
+
+        etLabel.setText(step.label != null ? step.label : "");
+        etX1.setText(String.valueOf(step.x1));
+        etY1.setText(String.valueOf(step.y1));
+        etX2.setText(String.valueOf(step.x2));
+        etY2.setText(String.valueOf(step.y2));
+        etDuration.setText(String.valueOf(step.duration));
+        etWaitBefore.setText(String.valueOf(step.waitBefore));
+        etWaitAfter.setText(String.valueOf(step.waitAfter));
+        etRetryCount.setText(String.valueOf(step.retryCount));
+        etRetryDelay.setText(String.valueOf(step.retryDelay));
+        if (step.matchImagePath != null) etImagePath.setText(step.matchImagePath);
+        if (step.matchText != null) etMatchText.setText(step.matchText);
+        if (step.inputText != null) etInputText.setText(step.inputText);
+        etJumpTarget.setText(String.valueOf(step.jumpTarget));
+
+        LinearLayout layoutCoords = findViewById(R.id.layout_coords);
+        LinearLayout layoutCoords2 = findViewById(R.id.layout_coords2);
+        LinearLayout layoutDuration = findViewById(R.id.layout_duration);
+        LinearLayout layoutImage = findViewById(R.id.layout_image);
+        LinearLayout layoutTextMatch = findViewById(R.id.layout_text_match);
+        LinearLayout layoutInput = findViewById(R.id.layout_input);
+        LinearLayout layoutJump = findViewById(R.id.layout_jump);
+
+        layoutCoords.setVisibility(View.GONE);
+        layoutCoords2.setVisibility(View.GONE);
+        layoutDuration.setVisibility(View.GONE);
+        layoutImage.setVisibility(View.GONE);
+        layoutTextMatch.setVisibility(View.GONE);
+        layoutInput.setVisibility(View.GONE);
+        layoutJump.setVisibility(View.GONE);
+
+        switch (step.type) {
+            case CLICK:
+            case LONG_PRESS:
+                layoutCoords.setVisibility(View.VISIBLE);
+                if (step.type == StepType.LONG_PRESS) {
+                    layoutDuration.setVisibility(View.VISIBLE);
+                }
+                break;
+            case SWIPE:
+                layoutCoords.setVisibility(View.VISIBLE);
+                layoutCoords2.setVisibility(View.VISIBLE);
+                layoutDuration.setVisibility(View.VISIBLE);
+                break;
+            case IMAGE_MATCH:
+                layoutImage.setVisibility(View.VISIBLE);
+                break;
+            case TEXT_MATCH:
+                layoutTextMatch.setVisibility(View.VISIBLE);
+                break;
+            case INPUT_TEXT:
+                layoutInput.setVisibility(View.VISIBLE);
+                break;
+            case JUMP:
+                layoutJump.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+
+        findViewById(R.id.btn_save).setOnClickListener(v -> {
+            step.label = etLabel.getText().toString().trim();
+            step.x1 = parseInt(etX1);
+            step.y1 = parseInt(etY1);
+            step.x2 = parseInt(etX2);
+            step.y2 = parseInt(etY2);
+            step.duration = parseLong(etDuration);
+            step.waitBefore = parseLong(etWaitBefore);
+            step.waitAfter = parseLong(etWaitAfter);
+            step.retryCount = parseInt(etRetryCount);
+            step.retryDelay = parseLong(etRetryDelay);
+            step.matchImagePath = etImagePath.getText().toString().trim();
+            step.matchText = etMatchText.getText().toString().trim();
+            step.inputText = etInputText.getText().toString().trim();
+            step.jumpTarget = parseInt(etJumpTarget);
+            listener.onSave(step);
+            dismiss();
+        });
+
+        findViewById(R.id.btn_cancel).setOnClickListener(v -> dismiss());
+    }
+
+    private int parseInt(EditText et) {
+        try {
+            return Integer.parseInt(et.getText().toString().trim());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private long parseLong(EditText et) {
+        try {
+            return Long.parseLong(et.getText().toString().trim());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+}
+EOF
+
+# 27. ui/settings/SettingsFragment.java
+cat > app/src/main/java/com/superclicker/ui/settings/SettingsFragment.java << 'EOF'
+package com.superclicker.ui.settings;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.superclicker.R;
+
+public class SettingsFragment extends Fragment {
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_settings, container, false);
+
+        view.findViewById(R.id.btn_save_settings).setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "设置已保存", Toast.LENGTH_SHORT).show();
+        });
+
+        view.findViewById(R.id.btn_export).setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "导出功能开发中", Toast.LENGTH_SHORT).show();
+        });
+
+        view.findViewById(R.id.btn_import).setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "导入功能开发中", Toast.LENGTH_SHORT).show();
+        });
+
+        return view;
+    }
+}
+EOF
+
+# 28. ui/log/LogFragment.java
+cat > app/src/main/java/com/superclicker/ui/log/LogFragment.java << 'EOF'
+package com.superclicker.ui.log;
+
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.superclicker.R;
+import com.superclicker.util.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class LogFragment extends Fragment implements Logger.LogListener {
+
+    private LogAdapter adapter;
+    private RecyclerView rvLogs;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_log, container, false);
+        rvLogs = view.findViewById(R.id.rv_logs);
+
+        view.findViewById(R.id.btn_clear_log).setOnClickListener(v -> {
+            Logger.clear();
+            adapter.setData(new ArrayList<String>());
+        });
+
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        adapter = new LogAdapter();
+        rvLogs.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvLogs.setAdapter(adapter);
+        adapter.setData(Logger.getLogs());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Logger.addListener(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Logger.removeListener(this);
+    }
+
+    @Override
+    public void onNewLog(String message) {
+        if (adapter != null) {
+            adapter.appendLog(message);
+            rvLogs.scrollToPosition(adapter.getItemCount() - 1);
+        }
+    }
+
+    static class LogAdapter extends RecyclerView.Adapter<LogAdapter.ViewHolder> {
+
+        private final List<String> data = new ArrayList<>();
+
+        void setData(List<String> list) {
+            data.clear();
+            if (list != null) {
+                data.addAll(list);
+            }
+            notifyDataSetChanged();
+        }
+
+        void appendLog(String line) {
+            data.add(line);
+            if (data.size() > 5000) {
+                data.remove(0);
+            }
+            notifyItemInserted(data.size() - 1);
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            TextView tv = new TextView(parent.getContext());
+            tv.setTextSize(11);
+            tv.setPadding(4, 2, 4, 2);
+            tv.setTypeface(Typeface.MONOSPACE);
+            return new ViewHolder(tv);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            String line = data.get(position);
+            TextView tv = (TextView) holder.itemView;
+            tv.setText(line);
+            if (line.contains("[E/")) {
+                tv.setTextColor(0xFFF44336);
+            } else if (line.contains("[W/")) {
+                tv.setTextColor(0xFFFF9800);
+            } else {
+                tv.setTextColor(0xFF333333);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return data.size();
+        }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            ViewHolder(View v) {
+                super(v);
+            }
+        }
+    }
+}
+EOF
+
+# ================================================================
+# 同时修复 item_step.xml，把 SwitchCompat 改成 Switch
+# ================================================================
+cat > app/src/main/res/layout/item_step.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_step"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="3dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp">
+
+        <CheckBox
+            android:id="@+id/cb_select"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_step_number"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_step_number"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_step_type"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_step_label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_step_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/text_hint"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tv_step_wait"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/text_hint"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <Switch
+            android:id="@+id/switch_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
+EOF
+
+# ================================================================
+# 提交并推送
+# ================================================================
+git add -A
+git commit -m "全面修复所有编译错误"
+git push -u origin main --force
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

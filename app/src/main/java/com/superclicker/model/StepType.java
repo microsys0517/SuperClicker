@@ -1,5 +1,4 @@
 package com.superclicker.model;
-
 public enum StepType {
     CLICK("点击", "点击指定坐标", Category.ACTION),
     SWIPE("滑动", "从A点滑到B点", Category.ACTION),
@@ -21,17 +20,12 @@ public enum StepType {
     JUMP("跳转", "跳转到指定步骤", Category.CONTROL),
     EMPTY("空", "空操作/延时", Category.CONTROL),
     SUB_RULE("子规则", "调用其他脚本", Category.CONTROL);
-
     public final String label;
     public final String description;
     public final Category category;
-
     StepType(String label, String description, Category category) {
-        this.label = label;
-        this.description = description;
-        this.category = category;
+        this.label = label; this.description = description; this.category = category;
     }
-
     public enum Category {
         ACTION("操作"), RECOGNIZE("识别"), CONDITION("判断"), TOOL("工具"), CONTROL("控制");
         public final String label;
