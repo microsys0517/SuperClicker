@@ -4,30 +4,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/bg_main">
+    android:background="@color/background">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/tv_main_status"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
         android:background="@color/primary"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/app_name"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/tv_main_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="就绪"
-            android:textColor="#B3FFFFFF"
-            android:textSize="13sp" />
-    </LinearLayout>
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="检查权限中..."
+        android:textColor="@color/white"
+        android:textSize="14sp" />
 
     <FrameLayout
         android:id="@+id/fragment_container"
@@ -38,9 +26,8 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:background="@color/surface"
-        app:itemActiveIndicatorStyle="@null"
-        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav" />
+
 </LinearLayout>
