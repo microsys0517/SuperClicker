@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name=".service.ClickAccessibilityService"
+            android:name=".service.ClickService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="false">
             <intent-filter>
@@ -39,7 +39,7 @@
         </service>
 
         <service
-            android:name=".service.FloatingControlService"
+            android:name=".service.FloatingService"
             android:exported="false" />
 
     </application>
