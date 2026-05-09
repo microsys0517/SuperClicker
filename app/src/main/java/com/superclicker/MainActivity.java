@@ -1,5 +1,4 @@
 package com.superclicker;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,152 +11,96 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.superclicker.service.ClickService;
-import com.superclicker.service.FloatingService;
+import com.superclicker.ui.script.ScriptListFragment;
 import com.superclicker.ui.editor.StepEditorFragment;
 import com.superclicker.ui.log.LogFragment;
-import com.superclicker.ui.script.ScriptListFragment;
 import com.superclicker.ui.settings.SettingsFragment;
-
+import com.superclicker.service.FloatingControlService;
+import com.superclicker.service.ClickAccessibilityService;
 public class MainActivity extends AppCompatActivity {
-
-    private static final String TAG = "MainActivity";
-    private static final int REQ_NOTIFICATION = 1001;
-
+    private static final String TAG = "MainAct";
+    private static final int REQ_NOTIF = 1001;
     private BottomNavigationView bottomNav;
     private TextView tvStatus;
-    private final ScriptListFragment fragScripts = new ScriptListFragment();
-    private final StepEditorFragment fragEditor = new StepEditorFragment();
-    private final LogFragment fragLog = new LogFragment();
-    private final SettingsFragment fragSettings = new SettingsFragment();
-
+    private final ScriptListFragment fScripts = new ScriptListFragment();
+    private final StepEditorFragment fEditor = new StepEditorFragment();
+    private final LogFragment fLog = new LogFragment();
+    private final SettingsFragment fSettings = new SettingsFragment();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        tvStatus = findViewById(R.id.tv_main_status);
-        bottomNav = findViewById(R.id.bottom_nav);
-
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, fragScripts).commit();
-        }
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            Fragment f;
-            int id = item.getItemId();
-            if (id == R.id.nav_scripts) f = fragScripts;
-            else if (id == R.id.nav_editor) f = fragEditor;
-            else if (id == R.id.nav_log) f = fragLog;
-            else if (id == R.id.nav_settings) f = fragSettings;
-            else return false;
-            getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, f).commit();
-            return true;
-        });
-
-        new Handler(Looper.getMainLooper()).postDelayed(this::startPermissionFlow, 500);
+        try {
+            setContentView(R.layout.activity_main);
+            tvStatus = findViewById(R.id.tv_main_status);
+            bottomNav = findViewById(R.id.bottom_nav);
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fScripts).commit();
+            }
+            bottomNav.setOnItemSelectedListener(item -> {
+                Fragment f;
+                int id = item.getItemId();
+                if (id == R.id.nav_scripts) f = fScripts;
+                else if (id == R.id.nav_editor) f = fEditor;
+                else if (id == R.id.nav_log) f = fLog;
+                else if (id == R.id.nav_settings) f = fSettings;
+                else return false;
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, f).commit();
+                return true;
+            });
+            new Handler(Looper.getMainLooper()).postDelayed(this::checkPerms, 500);
+        } catch (Exception e) { Log.e(TAG, "onCreate: " + e.getMessage()); }
     }
-
     @Override
     protected void onResume() {
         super.onResume();
         updateStatus();
-        if (isAllReady()) startFloating();
+        if (Settings.canDrawOverlays(this) && ClickAccessibilityService.isRunning()) startSvc();
     }
-
-    // ===== 权限引导流程 =====
-    private void startPermissionFlow() {
+    private void checkPerms() {
         if (Build.VERSION.SDK_INT >= 33) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                askPermission("通知权限", "用于脚本执行状态提醒",
-                    () -> ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATION));
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                showDlg("通知权限", "需要通知权限提醒脚本状态", () -> ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF));
                 return;
             }
         }
-        checkOverlay();
-    }
-
-    private void checkOverlay() {
         if (!Settings.canDrawOverlays(this)) {
-            askPermission("悬浮窗权限", "用于显示脚本控制面板",
-                () -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()))));
+            showDlg("悬浮窗权限", "需要悬浮窗权限显示控制面板", () -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))));
             return;
         }
-        checkAccessibility();
-    }
-
-    private void checkAccessibility() {
-        if (!ClickService.isRunning()) {
-            askPermission("无障碍服务", "用于执行自动点击、滑动等操作",
-                () -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        if (!ClickAccessibilityService.isRunning()) {
+            showDlg("无障碍服务", "需要无障碍服务执行自动化操作", () -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
             return;
         }
-        startFloating();
+        startSvc();
     }
-
-    private void askPermission(String title, String msg, Runnable action) {
-        new AlertDialog.Builder(this)
-            .setTitle(title).setMessage(msg)
-            .setPositiveButton("去开启", (d, w) -> {
-                try { action.run(); } catch (Exception e) {
-                    Toast.makeText(this, "请手动到设置中开启", Toast.LENGTH_LONG).show();
-                }
-            })
+    private void showDlg(String t, String m, Runnable r) {
+        new AlertDialog.Builder(this).setTitle(t).setMessage(m)
+            .setPositiveButton("去开启", (d, w) -> { try { r.run(); } catch (Exception e) { Toast.makeText(this, "请手动到设置中开启", Toast.LENGTH_LONG).show(); } })
             .setNegativeButton("稍后", null).setCancelable(false).show();
     }
-
     @Override
-    public void onRequestPermissionsResult(int req, @NonNull String[] perms, @NonNull int[] results) {
-        super.onRequestPermissionsResult(req, perms, results);
-        if (req == REQ_NOTIFICATION) {
-            new Handler(Looper.getMainLooper()).postDelayed(this::checkOverlay, 300);
-        }
+    public void onRequestPermissionsResult(int req, @NonNull String[] p, @NonNull int[] r) {
+        super.onRequestPermissionsResult(req, p, r);
+        if (req == REQ_NOTIF) new Handler(Looper.getMainLooper()).postDelayed(this::checkPerms, 300);
     }
-
-    private boolean isAllReady() {
-        return Settings.canDrawOverlays(this) && ClickService.isRunning();
+    private void startSvc() {
+        try { if (Settings.canDrawOverlays(this)) startForegroundService(new Intent(this, FloatingControlService.class)); }
+        catch (Exception e) { Log.e(TAG, "startSvc: " + e.getMessage()); }
     }
-
-    private void startFloating() {
-        try {
-            if (Settings.canDrawOverlays(this)) {
-                startForegroundService(new Intent(this, FloatingService.class));
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "启动悬浮窗失败: " + e.getMessage());
-        }
-    }
-
     private void updateStatus() {
-        boolean o = Settings.canDrawOverlays(this);
-        boolean a = ClickService.isRunning();
-        if (o && a) {
-            tvStatus.setText("就绪");
-            tvStatus.setTextColor(0xFF4CAF50);
-        } else {
-            StringBuilder sb = new StringBuilder();
-            if (!o) sb.append("[悬浮窗]");
-            if (!a) sb.append("[无障碍]");
-            sb.append("未开启");
-            tvStatus.setText(sb.toString());
-            tvStatus.setTextColor(0xFFFF9800);
-        }
+        try {
+            boolean a = ClickAccessibilityService.isRunning(), o = Settings.canDrawOverlays(this);
+            if (a && o) { tvStatus.setText("就绪"); tvStatus.setTextColor(0xFF4CAF50); }
+            else { tvStatus.setText((!o ? "[悬浮窗]" : "") + (!a ? "[无障碍]" : "") + " 未开启"); tvStatus.setTextColor(0xFFFF9800); }
+        } catch (Exception e) { Log.e(TAG, "status: " + e.getMessage()); }
     }
-
-    public StepEditorFragment getEditorFragment() { return fragEditor; }
+    public StepEditorFragment getEditorFragment() { return fEditor; }
     public void switchToEditor() { bottomNav.setSelectedItemId(R.id.nav_editor); }
 }
